@@ -20,18 +20,44 @@ bool hasChar(vector<char> arr, char letter ){
     else return false;
 }
 
+int countLinesInFIle(string fileName) {
+    ifstream file(fileName);
+    string line;
+    int number_of_lines = 0;
+    while (getline(file, line)) {
+        number_of_lines++;
+    }
+    file.close();
+    return number_of_lines;
+}
+
 class HangmanGame {
 public:
 
     void Initialize() {
+        string output;
+
         //initializing letter data
         ifstream letterData("letterData.txt");
-        string letter;
+
         if (letterData.is_open())
-            while (getline(letterData, letter))
-                letters_to_guess.push_back(letter[0]);
-        else cout << "letterData.txt not found";
+            while (getline(letterData, output))
+                letters_to_guess.push_back(output[0]);
+        else cout << "letterData.txt was not found or wasn't opened";
         letterData.close();
+
+        //initialazition of guessed phrase
+        ifstream phraseData("phraseData.txt");
+        srand(time(NULL));
+        int randomPhrase = rand() % countLinesInFIle("phraseData.txt");
+
+        if (phraseData.is_open()) { 
+            for(int i = 0; i <= randomPhrase; i++)
+                getline(phraseData, output);
+        }else cout << "phraseData.txt was not found or wasn't opened";
+        phrase_to_guess = output;
+        cout << "phrase: " << output;
+            
     };
 
     HangmanGame() {
@@ -51,9 +77,9 @@ public:
         if (hangman_progress >= 1)cout << endl << "|---|--------|";
 
         cout << endl;
-        for (int i = 0; i < word_to_guess.size(); i++) {
-            if (word_to_guess[i] != ' ' && !hasChar(guessed_letters,word_to_guess[i]))cout << "_";
-            else cout << word_to_guess[i];
+        for (int i = 0; i < phrase_to_guess.size(); i++) {
+            if (hasChar(letters_to_guess,phrase_to_guess[i]) && !hasChar(guessed_letters, phrase_to_guess[i]))cout << "_";
+            else cout << phrase_to_guess[i];
         }
         cout << endl;
     }
@@ -69,11 +95,14 @@ public:
         while (true){
             cout << endl << "Choose letter or type in the answer: ";
             getline(cin, player_input);
+
             if (player_input.size() > 1) {
                 bool wrongInput = false;
                 for (char letter : player_input) {
-                    if (hasChar(letters_to_guess, player_input[0])) {
-                        if (hasChar(guessed_letters, player_input[0])) {
+
+                    if (hasChar(letters_to_guess, letter) 
+                        || hasChar(stringToCharArray(phrase_to_guess), letter)) { // this is so interpunction can be used in an answer
+                        if (hasChar(guessed_letters, letter)) {
                             cout << endl << "Contains already guesssed letters";
                             wrongInput = true;
                             break;
@@ -85,7 +114,13 @@ public:
                         break;
                     }
                 }
+                
+                if (!wrongInput)break;
+                else continue;
             }
+            
+            
+
             if (hasChar(letters_to_guess, player_input[0]))
                 if (!hasChar(guessed_letters, player_input[0]))break;
                 else cout << endl << "Letter already guesssed";
@@ -93,32 +128,45 @@ public:
         }
     }
 
+    string unifyString(string txt) {
+        string result = "";
+        for (char letter : txt) {
+            if (hasChar(letters_to_guess, letter) || letter == ' ')
+                result += tolower(letter);
+        }
+        return result;
+    }
+
     bool checkPlayerInput() {
         
-        if (player_input == word_to_guess) {
+        string lowerInput = unifyString(player_input);
+        string lowerPhrase = unifyString(phrase_to_guess);
+
+        if (player_input == phrase_to_guess) {
+            
             //yay you win
-            cout << endl << "You guessed the word";
+            cout << endl << "You guessed the phrase";
             return true;
         }
 
-        if (player_input.size() > 1)return false;
+        if (player_input.size() == 1) {
+            guessed_letters.push_back(player_input[0]);
 
-        guessed_letters.push_back(player_input[0]);
-        if (hasChar(stringToCharArray((word_to_guess)), player_input[0])) {
-            cout << endl << "You guessed one letter";
+            if (hasChar(stringToCharArray((phrase_to_guess)), player_input[0])) {
+                cout << endl << "You guessed one letter";
 
-            for (char letter : word_to_guess) {
-                if (!hasChar(guessed_letters, letter) && letter != ' ')return false;
+                for (char letter : phrase_to_guess) {
+                    if (!hasChar(guessed_letters, letter) && letter != ' ')return false;
+                }
+                return true;
             }
-            return true;
         }
-        else {
-            hangman_progress++;
-            cout << endl << "You're guess was wrong";
-            if (hangman_progress == hangman_chances)return true;
-            return false;
-        }
-        
+
+        hangman_progress++;
+        cout << endl << "You're guess was wrong";
+        if (hangman_progress == hangman_chances)return true;
+        return false;
+
     }
 
     
@@ -138,7 +186,7 @@ public:
 private:
     int hangman_progress = 0;
     int hangman_chances = 8;
-    string word_to_guess = "Oto wisielec";
+    string phrase_to_guess;
     string player_input;
     vector<char> guessed_letters;
     vector<char> letters_to_guess;
