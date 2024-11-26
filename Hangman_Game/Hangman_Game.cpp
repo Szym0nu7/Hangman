@@ -38,7 +38,18 @@ public:
         Initialize();
     };
 
+
     void printGame() {
+
+        if (hangman_progress >= 8)cout << endl << "  ________";
+        if (hangman_progress >= 7)cout << endl << "  |/     |";
+        if (hangman_progress >= 6)cout << endl << "  |      |";
+        if (hangman_progress >= 5)cout << endl << "  |      O";
+        if (hangman_progress >= 4)cout << endl << "  |     /|\\";
+        if (hangman_progress >= 3)cout << endl << "  |     / \\";
+        if (hangman_progress >= 2)cout << endl << "_/|\\__________";
+        if (hangman_progress >= 1)cout << endl << "|---|--------|";
+
         cout << endl;
         for (int i = 0; i < word_to_guess.size(); i++) {
             if (word_to_guess[i] != ' ' && !hasChar(guessed_letters,word_to_guess[i]))cout << "_";
@@ -55,8 +66,31 @@ public:
         }
         cout << endl;
         
-        cout << "Choose letter or type in the answer: ";
-        getline(cin,player_input);
+        while (true){
+            cout << endl << "Choose letter or type in the answer: ";
+            getline(cin, player_input);
+            if (player_input.size() > 1) {
+                bool wrongInput = false;
+                for (char letter : player_input) {
+                    if (hasChar(letters_to_guess, player_input[0])) {
+                        if (hasChar(guessed_letters, player_input[0])) {
+                            cout << endl << "Contains already guesssed letters";
+                            wrongInput = true;
+                            break;
+                        }
+                    }
+                    else {
+                        cout << endl << "Contains letters not in letter base";
+                        wrongInput = true;
+                        break;
+                    }
+                }
+            }
+            if (hasChar(letters_to_guess, player_input[0]))
+                if (!hasChar(guessed_letters, player_input[0]))break;
+                else cout << endl << "Letter already guesssed";
+            else cout << endl << "Letter not in letter base";
+        }
     }
 
     bool checkPlayerInput() {
@@ -66,6 +100,8 @@ public:
             cout << endl << "You guessed the word";
             return true;
         }
+
+        if (player_input.size() > 1)return false;
 
         guessed_letters.push_back(player_input[0]);
         if (hasChar(stringToCharArray((word_to_guess)), player_input[0])) {
@@ -79,10 +115,13 @@ public:
         else {
             hangman_progress++;
             cout << endl << "You're guess was wrong";
+            if (hangman_progress == hangman_chances)return true;
+            return false;
         }
-        return false;
+        
     }
 
+    
     void GameLoop() {
         printGame();
     //render rules and game
@@ -90,19 +129,19 @@ public:
         while (true) {
             playerInput();
             if(checkPlayerInput())break;
-            //check answer
             printGame();
             
         }
     //end game
     };
+
 private:
     int hangman_progress = 0;
+    int hangman_chances = 8;
     string word_to_guess = "Oto wisielec";
     string player_input;
     vector<char> guessed_letters;
     vector<char> letters_to_guess;
-    vector<char> letters_to_print;
 };
 
 int main()
