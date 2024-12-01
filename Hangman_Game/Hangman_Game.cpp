@@ -38,14 +38,29 @@ int countLinesInFIle(string fileName) {
 class HangmanGame {
 public:
 
+    string unifyString(string txt, bool noSpaces = false) {
+        string result = "";
+        for (char letter : txt) {
+            if (hasChar(letters_to_guess, letter) || (letter == ' ' && !noSpaces))
+                result += tolower(letter);
+        }
+        return result;
+    }
+
     void Initialize() {
 
+        system("cls");
+
+        guessed_letters.clear();
+        letters_to_guess.clear();
+        hangman_progress = 0;
+        hardMode = false;
        
         string output;
 
         //initializing letter data
         ifstream letterData("letterData.txt");
-
+        
         if (letterData.is_open())
             while (getline(letterData, output))
                 letters_to_guess.push_back(output[0]);
@@ -65,7 +80,7 @@ public:
             if (gameMode == "1") gameMode = "normal";
             if (gameMode == "2") gameMode = "hard";
 
-            gameMode = unifyString(gameMode, false);
+            gameMode = unifyString(gameMode, true);
 
             if (gameMode == "normal" || gameMode == "hard")break;
             cout << "Invalid input" << endl;
@@ -102,17 +117,31 @@ public:
 
     };
 
-    string unifyString(string txt, bool noSpaces = false) {
-        string result = "";
-        for (char letter : txt) {
-            if (hasChar(letters_to_guess, letter) || (letter == ' ' && !noSpaces))
-                result += tolower(letter);
-        }
-        return result;
-    }
-
     HangmanGame() {
-        Initialize();
+        while (true) {
+            Initialize();
+
+            GameLoop();
+
+            cout << endl
+                << "Do you wish to play again?" << endl
+                << "   1. Yes" << endl
+                << "   2. No" << endl;
+
+            string continueGame;
+            while (true) {
+                getline(cin, continueGame);
+
+                if (continueGame == "1") continueGame = "yes";
+                if (continueGame == "2") continueGame = "no";
+
+                continueGame = unifyString(continueGame, true);
+
+                if (continueGame == "yes" || continueGame == "no")break;
+                cout << "Invalid input" << endl;
+            }
+            if (continueGame == "no")break;
+        }
     };
 
 
@@ -400,9 +429,8 @@ private:
 
 int main()
 {
-    HangmanGame game;
-    game.GameLoop();
-    
+
+        HangmanGame game;
     
 }
 
