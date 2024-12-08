@@ -35,6 +35,7 @@ int countLinesInFIle(string fileName) {
     return number_of_lines;
 }
 
+
 class HangmanGame {
 public:
 
@@ -67,7 +68,16 @@ public:
         else cout << "letterData.txt was not found or wasn't opened";
         letterData.close();
 
+        //Choose your name
+        do {
+            cout << "Choose your name, it must consist of exactly 3 characters: " << endl;
+            getline(cin, player_name);
+            system("cls");
+        } while (player_name.length() != 3);
 
+        cout << "Your name is: " << player_name << endl << endl;
+
+        // Choose Game Mode
         cout
             << "Choose game mode: " << endl
             << "   1. Normal" << endl
@@ -376,7 +386,6 @@ public:
             
             //yay you win
 
-            cout << "You have won" << endl;
             return true;
         }
 
@@ -389,35 +398,98 @@ public:
                 for (char letter : phrase_to_guess) {
                     if (!hasChar(guessed_letters, letter) && hasChar(letters_to_guess,letter))return false;
                 }
-                cout << "You have won" << endl;
                 return true;
             }
         }
 
         hangman_progress++;
-        if (hangman_progress == hangman_chances) {
-            cout << "You have lost" << endl;
+        if (hangman_progress == hangman_chances)
             return true;
-        }else cout << "You're guess was wrong" << endl;
+        else cout << "You're guess was wrong" << endl;
         return false;
 
+    }
+
+    int getScoreFromRecord(string record) {
+
+        return stoi(record.substr(6, record.length() - 6));
+    }
+
+    void GameEndResult() {
+
+        time_t endTime = time(NULL);
+        
+        int score = (hangman_chances - hangman_progress) * 1000 / (endTime - startTime);
+
+        cout << "Your score: " << score << endl;
+
+        if (hangman_progress == hangman_chances) //Check if game was lost
+            cout << "You have lost" << endl;
+        else {
+            cout << "You have won" << endl;
+
+            vector<string> scoreRecords;
+
+            //read scores
+            string scoreFile = "scoresNormalMode.txt";
+            if (hardMode == true)scoreFile = "scoresHardMode.txt";
+            ifstream scoresRead(scoreFile);
+
+            if (scoresRead.is_open()) {
+                string scoreRecord;
+                while (getline(scoresRead, scoreRecord)) {
+                    scoreRecords.push_back(scoreRecord);
+                }
+                scoreRecords.push_back(player_name + " - " + to_string(score));
+
+                for (int i = 0; i < scoreRecords.size() - 1; i++) {
+                    for (int j = i + 1; j < scoreRecords.size(); j++) {
+                        cout << i << " " << j << " " << scoreRecords.size();
+                        if(scoreRecords[i] != "" && scoreRecords[j] != "")
+                        if (getScoreFromRecord(scoreRecords[i]) < getScoreFromRecord(scoreRecords[j]))
+                            swap(scoreRecords[i], scoreRecords[j]);
+                    }
+                }
+
+            }
+            else cout << scoreFile << " was not found or wasn't opened";
+            scoresRead.close();
+
+            //write scores
+            ofstream scoresWrite(scoreFile);
+
+            if (scoresWrite.is_open()) {
+                for (string record : scoreRecords) {
+                    scoresWrite << record << endl;
+                    cout << record << endl;
+                }
+            }
+            else cout << scoreFile << " was not found or wasn't opened";
+            scoresWrite.close();
+
+        }
     }
 
     
     void GameLoop() {
         printGame();
-    //render rules and game
-    //choose guessed word
+
+        startTime = time(NULL);
+
         while (true) {
             playerInput();
             if (checkPlayerInput())break;
             printGame();
         }
+        
         cout << endl << "The phrase: " << phrase_to_guess;
         printGame();
+        GameEndResult();
     };
 
 private:
+    time_t startTime;
+    string player_name;
     int hangman_progress = 0;
     bool hardMode = false;
     int hangman_chances = 6;
